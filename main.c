@@ -16,24 +16,24 @@ int main(int argc, char *argv[])
     {
         if (strcmp(argv[i], "--role") == 0 && i + 1 < argc)
         {
-            strcpy(role, argv[i + 1]);
+            strncpy(role, argv[i + 1], sizeof(role) - 1);
             i++;
         }
         else if (strcmp(argv[i], "--user") == 0 && i + 1 < argc)
         {
-            strcpy(user, argv[i + 1]);
+            strncpy(user, argv[i + 1], sizeof(user) - 1);
             i++;
         }
         else if (strcmp(argv[i], "--add") == 0 && i + 1 < argc)
         {
             strcpy(command, "add");
-            strcpy(district, argv[i + 1]);
+            strncpy(district, argv[i + 1], sizeof(district) - 1);
             i++;
         }
         else if (strcmp(argv[i], "--list") == 0 && i + 1 < argc)
         {
             strcpy(command, "list");
-            strcpy(district, argv[i + 1]);
+            strncpy(district, argv[i + 1], sizeof(district) - 1);
             i++;
         }
     }
@@ -46,21 +46,21 @@ int main(int argc, char *argv[])
 
     if (strcmp(role, "manager") != 0 && strcmp(role, "inspector") != 0)
     {
-        printf("Error: Invalid role! It must be 'manager' or 'inspector'.\n");
+        printf("Error: Invalid role '%s'. Must be 'manager' or 'inspector'.\n", role);
         return 1;
     }
 
     if (strlen(command) == 0)
     {
-        printf("Error: You must specify a command (--add or --list)!\n");
+        printf("Error: You must specify a command!\n");
+        printf("Available commands: --add, --list.\n");
         return 1;
     }
-
     if (strcmp(command, "add") == 0)
     {
         district_exists(district);
         log_action(district, user, role, "add");
-        cmd_add(district, user);
+        cmd_add(district, user, role);
     }
     else if (strcmp(command, "list") == 0)
     {
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        printf("Unknown command!\n");
+        printf("Unknown command: %s\n", command);
         return 1;
     }
 
