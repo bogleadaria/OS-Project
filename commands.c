@@ -125,3 +125,45 @@ void cmd_add(const char *district, const char *user, const char *role)
 
     close(f);
 }
+
+void cmd_view(const char *district, int report_id)
+{
+    char path[256];
+    snprintf(path, sizeof(path), "%s/reports.dat", district);
+
+    int f = open(path, O_RDONLY);
+    if (f == -1)
+    {
+        perror("Failed to open reports.dat");
+        return;
+    }
+
+    Report r;
+    int found = 0;
+    while (read(f, &r, sizeof(Report)) == sizeof(Report))
+    {
+        if (r.report_id == report_id)
+        {
+            found = 1;
+            char time_str[64];
+            struct tm *tm_info = localtime(&r.timestamp);
+            strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", tm_info);
+
+            printf("Report ID: %d\n", r.report_id);
+            printf("Inspector: %s\n", r.inspector);
+            printf("Latitude: %.6f\n", r.latitude);
+            printf("Longitude: %.6f\n", r.longitude);
+            printf("Category: %s\n", r.issue_category);
+            printf("Severity: %d\n", r.severity);
+            printf("Timestamp: %s\n", time_str);
+            printf("Description: %s\n", r.description);
+            break;
+        }
+    }
+    close(f);
+
+    if (!found)
+    {
+        printf("Report with ID %d not found in %s.\n", report_id, district);
+    }
+}
