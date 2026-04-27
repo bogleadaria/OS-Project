@@ -78,6 +78,9 @@ int main(int argc, char *argv[])
         printf("Available commands: --add, --list, --view, --remove_report, --update_threshold.\n");
         return 1;
     }
+
+    check_dangling_symlinks();
+
     if (strcmp(command, "add") == 0)
     {
         district_exists(district);

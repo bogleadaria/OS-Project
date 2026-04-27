@@ -139,10 +139,53 @@ void create_symlink(const char *district)
     snprintf(target, sizeof(target), "%s/reports.dat", district);
 
     struct stat lst;
-    if(lstat(link_name, &lst) == 0){
+    if (lstat(link_name, &lst) == 0)
+    {
         unlink(link_name);
     }
-    if(symlink(target, link_name) == -1){
+    if (symlink(target, link_name) == -1)
+    {
         perror("Failed to create symlink.");
     }
+}
+
+void check_dangling_symlinks()
+{
+    char link_name[256];
+    char target[256];
+    struct stat lst, st;
+
+    DIR *dir = opendir(".");
+    if (dir == NULL)
+    {
+        perror("Failed to open current directory.\n");
+        return;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL)
+    {
+        if (strncmp(entry->d_name, "active_reports-", 15) != 0)
+
+            continue;
+
+        strncpy(link_name, entry->d_name, sizeof(link_name) - 1);
+
+        if (lstat(link_name, &lst) == -1)
+            continue;
+
+        if (!S_ISLNK(lst.st_mode))
+            continue;
+
+        ssize_t len = readlink(link_name, target, sizeof(target) - 1);
+        if (len == -1)
+            continue;
+
+        target[len] = '\0';
+
+        if(stat(target, &st) == -1){
+            printf("Warning: dangling symlink detected: %s - %s (target does not exist).\n", link_name, target);
+        }
+    }
+    closedir(dir);
 }
