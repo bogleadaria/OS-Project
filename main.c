@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
     if (strcmp(command, "add") == 0)
     {
         district_exists(district);
+        create_district_cfg(district);
         log_action(district, user, role, "add");
         cmd_add(district, user, role);
     }
