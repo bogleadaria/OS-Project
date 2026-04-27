@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     char user[32] = "";
     char command[32] = "";
     char district[64] = "";
-    int extra_int = -1;
+    int extra_int = -1; // used for report_id or threshold value
 
     for (int i = 1; i < argc; i++)
     {
@@ -51,6 +51,13 @@ int main(int argc, char *argv[])
             extra_int = atoi(argv[i + 2]);
             i += 2;
         }
+        else if (strcmp(argv[i], "--update_threshold") == 0 && i + 2 < argc)
+        {
+            strcpy(command, "update_threshold");
+            strncpy(district, argv[i + 1], sizeof(district) - 1);
+            extra_int = atoi(argv[i + 2]);
+            i += 2;
+        }
     }
 
     if (strlen(role) == 0 || strlen(user) == 0)
@@ -68,7 +75,7 @@ int main(int argc, char *argv[])
     if (strlen(command) == 0)
     {
         printf("Error: You must specify a command!\n");
-        printf("Available commands: --add, --list, --view, --remove_report.\n");
+        printf("Available commands: --add, --list, --view, --remove_report, --update_threshold.\n");
         return 1;
     }
     if (strcmp(command, "add") == 0)
@@ -102,6 +109,16 @@ int main(int argc, char *argv[])
         }
         log_action(district, user, role, "remove_report");
         cmd_remove_report(district, role, extra_int);
+    }
+    else if (strcmp(command, "update_threshold") == 0)
+    {
+        if (extra_int == -1)
+        {
+            printf("Error: --update_threshold requires <district> <value>\n");
+            return 1;
+        }
+        log_action(district, user, role, "update_threshold");
+        cmd_update_threshold(district, role, extra_int);
     }
     else
     {
