@@ -44,6 +44,13 @@ int main(int argc, char *argv[])
             extra_int = atoi(argv[i + 2]);
             i += 2;
         }
+        else if (strcmp(argv[i], "--remove_report") == 0 && i + 2 < argc)
+        {
+            strcpy(command, "remove_report");
+            strncpy(district, argv[i + 1], sizeof(district) - 1);
+            extra_int = atoi(argv[i + 2]);
+            i += 2;
+        }
     }
 
     if (strlen(role) == 0 || strlen(user) == 0)
@@ -61,7 +68,7 @@ int main(int argc, char *argv[])
     if (strlen(command) == 0)
     {
         printf("Error: You must specify a command!\n");
-        printf("Available commands: --add, --list, --view.\n");
+        printf("Available commands: --add, --list, --view, --remove_report.\n");
         return 1;
     }
     if (strcmp(command, "add") == 0)
@@ -85,6 +92,16 @@ int main(int argc, char *argv[])
         }
         log_action(district, user, role, "view");
         cmd_view(district, extra_int);
+    }
+    else if (strcmp(command, "remove_report") == 0)
+    {
+        if (extra_int == -1)
+        {
+            printf("Error: --remove_report requires <district> <report_id>\n");
+            return 1;
+        }
+        log_action(district, user, role, "remove_report");
+        cmd_remove_report(district, role, extra_int);
     }
     else
     {

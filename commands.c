@@ -167,3 +167,64 @@ void cmd_view(const char *district, int report_id)
         printf("Report with ID %d not found in %s.\n", report_id, district);
     }
 }
+
+void cmd_remove_report(const char *district, const char *role, int report_id)
+{
+    if(strcmp(role, "manager") != 0){
+        printf("Permission denied: only managers can remove reports.\n");
+        return;
+    }
+    char path[256];
+    snprintf(path, sizeof(path), "%s/reports.dat", district);
+
+    if(!check_permission(path, role, 1, 1)){
+        return;
+    }
+
+    int f = open(path, O_RDWR);
+    if(f == -1){
+        perror("Failed to open reports.dat");
+        return;
+    }
+
+    struct stat st;
+    fstat(f, &st);
+    int total_reports = (int)(st.st_size / sizeof(Report));
+    int found_pos = -1;
+
+    Report r;
+    for(int i = 0; i< total_reports; i++){
+        lseek(f, (off_t)(i * sizeof(Report)), SEEK_SET);
+        read(f, &r, sizeof(Report));
+        if(r.report_id == report_id){
+            found_pos = i;
+            break;
+        }
+    }
+     if(found_pos == -1){
+        printf("Report with ID %d not found.\n", report_id);
+        close(f);
+        return;
+     }
+
+     for(int i = found_pos+1; i<total_reports; i++){
+        lseek(f, (off_t)(i * sizeof(Report)), SEEK_SET);
+        read(f, &r, sizeof(Report));
+
+        lseek(f, (off_t)((i-1) * sizeof(Report)), SEEK_SET);
+        write(f, &r, sizeof(Report));
+     }
+     ftruncate(f, (off_t)((total_reports - 1) * sizeof(Report)));
+
+     close(f);
+
+     printf("Report ID %d removed successfully from %s.\n", report_id, district);
+}
+
+void cmd_update_threshold(const char *district, const char *role, int value)
+{
+}
+
+void cmd_filter(const char *district, int cond_count, char **conditions)
+{
+}
