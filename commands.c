@@ -170,19 +170,22 @@ void cmd_view(const char *district, int report_id)
 
 void cmd_remove_report(const char *district, const char *role, int report_id)
 {
-    if(strcmp(role, "manager") != 0){
+    if (strcmp(role, "manager") != 0)
+    {
         printf("Permission denied: only managers can remove reports.\n");
         return;
     }
     char path[256];
     snprintf(path, sizeof(path), "%s/reports.dat", district);
 
-    if(!check_permission(path, role, 1, 1)){
+    if (!check_permission(path, role, 1, 1))
+    {
         return;
     }
 
     int f = open(path, O_RDWR);
-    if(f == -1){
+    if (f == -1)
+    {
         perror("Failed to open reports.dat");
         return;
     }
@@ -193,36 +196,80 @@ void cmd_remove_report(const char *district, const char *role, int report_id)
     int found_pos = -1;
 
     Report r;
-    for(int i = 0; i< total_reports; i++){
+    for (int i = 0; i < total_reports; i++)
+    {
         lseek(f, (off_t)(i * sizeof(Report)), SEEK_SET);
         read(f, &r, sizeof(Report));
-        if(r.report_id == report_id){
+        if (r.report_id == report_id)
+        {
             found_pos = i;
             break;
         }
     }
-     if(found_pos == -1){
+    if (found_pos == -1)
+    {
         printf("Report with ID %d not found.\n", report_id);
         close(f);
         return;
-     }
+    }
 
-     for(int i = found_pos+1; i<total_reports; i++){
+    for (int i = found_pos + 1; i < total_reports; i++)
+    {
         lseek(f, (off_t)(i * sizeof(Report)), SEEK_SET);
         read(f, &r, sizeof(Report));
 
-        lseek(f, (off_t)((i-1) * sizeof(Report)), SEEK_SET);
+        lseek(f, (off_t)((i - 1) * sizeof(Report)), SEEK_SET);
         write(f, &r, sizeof(Report));
-     }
-     ftruncate(f, (off_t)((total_reports - 1) * sizeof(Report)));
+    }
+    ftruncate(f, (off_t)((total_reports - 1) * sizeof(Report)));
 
-     close(f);
+    close(f);
 
-     printf("Report ID %d removed successfully from %s.\n", report_id, district);
+    printf("Report ID %d removed successfully from %s.\n", report_id, district);
 }
 
 void cmd_update_threshold(const char *district, const char *role, int value)
 {
+    if (strcmp(role, "manager") != 0)
+    {
+        printf("Permission denied: only managers can update the threshold.\n");
+        return;
+    }
+
+    char filePath[256];
+    snprintf(filePath, sizeof(filePath), "%s/district.cfg", district);
+
+    struct stat st;
+    if (stat(filePath, &st) == -1)
+    {
+        printf("district.cfg not found. Creating it ...\n");
+        create_district_cfg(district);
+        stat(filePath, &st);
+    }
+
+    mode_t expected = S_IRUSR | S_IWUSR | S_IRGRP;
+    mode_t actual = st.st_mode & 0777;
+
+    if (actual != expected)
+    {
+        char perm_str[10];
+        mode_to_string(st.st_mode, perm_str);
+        printf("Security error: district.cfg has unexpected permissions %s (expected rw-r-----).\nRefusing to write.\n", perm_str);
+        return;
+    }
+
+    int f = open(filePath, O_WRONLY | O_TRUNC);
+    if(f == -1){
+        perror("Failed to open district.cfg.\n");
+        return;
+    }
+
+    char content[64];
+    int len = snprintf(content, sizeof(content), "severity_threshold = %d\n", value);
+    write(f,content, len);
+    close(f);
+
+    printf("Severity threshold updated to %d in %s.\n", value, district);
 }
 
 void cmd_filter(const char *district, int cond_count, char **conditions)

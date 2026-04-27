@@ -135,7 +135,7 @@ void create_symlink(const char *district)
     char link_name[256];
     char target[256];
 
-    snprintf(link_name, sizeof(link_name), "active-reports-%s", district);
+    snprintf(link_name, sizeof(link_name), "active_reports-%s", district);
     snprintf(target, sizeof(target), "%s/reports.dat", district);
 
     struct stat lst;
