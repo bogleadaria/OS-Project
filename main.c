@@ -69,6 +69,12 @@ int main(int argc, char *argv[])
             cond_count = argc - cond_start;
             i = argc;
         }
+        else if (strcmp(argv[i], "--remove_district") == 0 && i + 1 < argc)
+        {
+            strcpy(command, "remove_district");
+            strncpy(district, argv[i + 1], sizeof(district) - 1);
+            i++;
+        }
     }
 
     if (strlen(role) == 0 || strlen(user) == 0)
@@ -86,7 +92,7 @@ int main(int argc, char *argv[])
     if (strlen(command) == 0)
     {
         printf("Error: You must specify a command!\n");
-        printf("Available commands: --add, --list, --view, --remove_report, --update_threshold.\n");
+        printf("Available commands: --add, --list, --view, --remove_report, --update_threshold, --filter, --remove_district.\n");
         return 1;
     }
 
@@ -143,6 +149,11 @@ int main(int argc, char *argv[])
         }
         log_action(district, user, role, "filter");
         cmd_filter(district, cond_count, &argv[cond_start]);
+    }
+    else if (strcmp(command, "remove_district") == 0)
+    {
+        log_action(district, user, role, "remove_district");
+        cmd_remove_district(district, role);
     }
     else
     {

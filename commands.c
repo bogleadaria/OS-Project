@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
@@ -420,4 +421,64 @@ void cmd_filter(const char *district, int cond_count, char **conditions)
     {
         printf("Total matching reports: %d\n", found);
     }
+}
+
+void cmd_remove_district(const char *district, const char *role)
+{
+    if (strcmp(role, "manager") != 0)
+    {
+        printf("Permission denied: only managers can remove a district!\n");
+        return;
+    }
+
+    if (strchr(district, '/') != NULL || strstr(district, "...") != NULL)
+    {
+        printf("Error: invalid district name '%s'!\n");
+        return;
+    }
+
+    struct stat st;
+    if (stat(district, &st) == -1)
+    {
+        printf("Error: district '%s' doesn't exist!\n");
+        return;
+    }
+
+    pid_t pid = fork();
+    if (pid == -1)
+    {
+        perror("fork failed!");
+        return;
+    }
+    if (pid == 0)
+    {
+        execlp("rm", "rm", "-rf", district, (char *)NULL);
+        perror("execlp rm failed!");
+        _exit(1);
+    }
+
+    int status;
+    waitpid(pid, &status, 0);
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+    {
+        printf("Error: failed to remove district directory '%s'.\n");
+        return;
+    }
+
+    char link_name[256];
+    snprintf(link_name, sizeof(link_name), "active_reports-%s", district);
+
+    struct stat lst;
+    if (lstat(link_name, &lst) == 0)
+    {
+        if (unlink(link_name) == -1)
+        {
+            perror("Warning: couldn't remove symlink");
+        }
+        else
+        {
+            printf("Symlink '%s' removed.\n", district);
+        }
+    }
+    printf("District '%s' has been removed successfully.\n");
 }
