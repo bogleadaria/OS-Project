@@ -261,19 +261,163 @@ void cmd_update_threshold(const char *district, const char *role, int value)
     }
 
     int f = open(filePath, O_WRONLY | O_TRUNC);
-    if(f == -1){
+    if (f == -1)
+    {
         perror("Failed to open district.cfg.\n");
         return;
     }
 
     char content[64];
     int len = snprintf(content, sizeof(content), "severity_threshold = %d\n", value);
-    write(f,content, len);
+    write(f, content, len);
     close(f);
 
     printf("Severity threshold updated to %d in %s.\n", value, district);
 }
 
+int parse_condition(const char *input, char *field, char *op, char *value)
+{
+    char buf[256]; // string copy
+    strncpy(buf, input, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
+
+    // field
+    char *first_colon = strchr(buf, ':');
+    if (!first_colon)
+        return 0;
+    *first_colon = '\0';
+
+    // operator
+    char *second_colon = strchr(first_colon + 1, ':');
+    if (!second_colon)
+        return 0;
+    *second_colon = '\0';
+
+    strncpy(field, buf, 32 - 1);
+    field[32 - 1] = '\0';
+
+    strncpy(op, first_colon + 1, 4 - 1);
+    op[4 - 1] = '\0';
+
+    strncpy(value, second_colon + 1, 64 - 1);
+    value[64 - 1] = '\0';
+
+    return 1;
+}
+
+int match_condition(Report *r, const char *field, const char *op, const char *value)
+{
+    if (strcmp(field, "severity") == 0)
+    {
+        int sev_val = atoi(value);
+        if (strcmp(op, "==") == 0)
+            return r->severity == sev_val;
+        if (strcmp(op, "!=") == 0)
+            return r->severity != sev_val;
+        if (strcmp(op, "<") == 0)
+            return r->severity < sev_val;
+        if (strcmp(op, "<=") == 0)
+            return r->severity <= sev_val;
+        if (strcmp(op, ">") == 0)
+            return r->severity > sev_val;
+        if (strcmp(op, ">=") == 0)
+            return r->severity >= sev_val;
+    }
+    else if (strcmp(field, "category") == 0)
+    {
+        int cmp = strcmp(r->issue_category, value);
+        if (strcmp(op, "==") == 0)
+            return cmp == 0;
+        if (strcmp(op, "!=") == 0)
+            return cmp != 0;
+    }
+    else if (strcmp(field, "inspector") == 0)
+    {
+        int cmp = strcmp(r->inspector, value);
+        if (strcmp(op, "==") == 0)
+            return cmp == 0;
+        if (strcmp(op, "!=") == 0)
+            return cmp != 0;
+    }
+    else if (strcmp(field, "timestamp") == 0)
+    {
+        time_t ts_val = (time_t)atol(value);
+        if (strcmp(op, "==") == 0)
+            return r->timestamp == ts_val;
+        if (strcmp(op, "!=") == 0)
+            return r->timestamp != ts_val;
+        if (strcmp(op, "<") == 0)
+            return r->timestamp < ts_val;
+        if (strcmp(op, "<=") == 0)
+            return r->timestamp <= ts_val;
+        if (strcmp(op, ">") == 0)
+            return r->timestamp > ts_val;
+        if (strcmp(op, ">=") == 0)
+            return r->timestamp >= ts_val;
+    }
+
+    return 0;
+}
+
 void cmd_filter(const char *district, int cond_count, char **conditions)
 {
+    char path[256];
+    snprintf(path, sizeof(path), "%s/reports.dat", district);
+
+    int f = open(path, O_RDONLY);
+    if (f == -1)
+    {
+        perror("Failed to open reports.dat");
+        return;
+    }
+
+    char fields[10][32];
+    char ops[10][4];
+    char values[10][64];
+
+    for (int i = 0; i < cond_count; i++)
+    {
+        if (!parse_condition(conditions[i], fields[i], ops[i], values[i]))
+        {
+            printf("Invalid condition format: '%s'. Expected field:op:value\n", conditions[i]);
+            close(f);
+            return;
+        }
+    }
+
+    Report r;
+    int found = 0;
+    while (read(f, &r, sizeof(Report)) == sizeof(Report))
+    {
+        int all_match = 1;
+        for (int i = 0; i < cond_count; i++)
+        {
+            if (!match_condition(&r, fields[i], ops[i], values[i]))
+            {
+                all_match = 0;
+                break;
+            }
+        }
+
+        if (all_match)
+        {
+            char time_str[64];
+            struct tm *tm_info = localtime(&r.timestamp);
+            strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", tm_info);
+
+            printf("ID: %d | Inspector: %s | Category: %s | Severity: %d | Time: %s | Desc: %s\n",
+                   r.report_id, r.inspector, r.issue_category, r.severity, time_str, r.description);
+            found++;
+        }
+    }
+    close(f);
+
+    if (found == 0)
+    {
+        printf("No reports match the given conditions.\n");
+    }
+    else
+    {
+        printf("Total matching reports: %d\n", found);
+    }
 }

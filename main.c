@@ -11,7 +11,9 @@ int main(int argc, char *argv[])
     char user[32] = "";
     char command[32] = "";
     char district[64] = "";
-    int extra_int = -1; // used for report_id or threshold value
+    int extra_int = -1;  // used for report_id or threshold value
+    int cond_start = -1; // index of first condition --filter
+    int cond_count = 0;
 
     for (int i = 1; i < argc; i++)
     {
@@ -57,6 +59,15 @@ int main(int argc, char *argv[])
             strncpy(district, argv[i + 1], sizeof(district) - 1);
             extra_int = atoi(argv[i + 2]);
             i += 2;
+        }
+        else if (strcmp(argv[i], "--filter") == 0 && i + 1 < argc)
+        {
+            strcpy(command, "filter");
+            strncpy(district, argv[i + 1], sizeof(district) - 1);
+            i++;
+            cond_start = i + 1;
+            cond_count = argc - cond_start;
+            i = argc;
         }
     }
 
@@ -122,6 +133,16 @@ int main(int argc, char *argv[])
         }
         log_action(district, user, role, "update_threshold");
         cmd_update_threshold(district, role, extra_int);
+    }
+    else if (strcmp(command, "filter") == 0)
+    {
+        if (cond_count <= 0)
+        {
+            printf("Error: --filter requires at least one condition (field:operator:value)\n");
+            return 1;
+        }
+        log_action(district, user, role, "filter");
+        cmd_filter(district, cond_count, &argv[cond_start]);
     }
     else
     {
