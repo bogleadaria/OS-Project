@@ -433,14 +433,14 @@ void cmd_remove_district(const char *district, const char *role)
 
     if (strchr(district, '/') != NULL || strstr(district, "...") != NULL)
     {
-        printf("Error: invalid district name '%s'!\n");
+        printf("Error: invalid district name '%s'!\n", district);
         return;
     }
 
     struct stat st;
     if (stat(district, &st) == -1)
     {
-        printf("Error: district '%s' doesn't exist!\n");
+        printf("Error: district '%s' doesn't exist!\n", district);
         return;
     }
 
@@ -461,7 +461,7 @@ void cmd_remove_district(const char *district, const char *role)
     waitpid(pid, &status, 0);
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
     {
-        printf("Error: failed to remove district directory '%s'.\n");
+        printf("Error: failed to remove district directory '%s'.\n", district);
         return;
     }
 
@@ -480,5 +480,5 @@ void cmd_remove_district(const char *district, const char *role)
             printf("Symlink '%s' removed.\n", district);
         }
     }
-    printf("District '%s' has been removed successfully.\n");
+    printf("District '%s' has been removed successfully.\n", district);
 }
