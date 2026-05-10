@@ -1,8 +1,13 @@
 CC = gcc
 CFLAGS = -Wall -g
-Target = city_manager
-SRCS = city_manager_main.c utils.c commands.c
-$(Target): $(SRCS)
-	$(CC) $(CFLAGS) $(SRCS) -o $(Target)
+
+all: city_manager monitor_reports
+
+city_manager: city_manager_main.c utils.c commands.c
+	$(CC) $(CFLAGS) city_manager_main.c utils.c commands.c -o city_manager
+
+monitor_reports: monitor_main.c monitor_reports.c
+	$(CC) $(CFLAGS) monitor_main.c monitor_reports.c -o monitor_reports
+
 clean:
-	rm -f $(Target)
+	rm -f city_manager monitor_reports
