@@ -1,11 +1,13 @@
 #include "utils.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
+#include <signal.h>
 
 void district_exists(const char *district)
 {
@@ -188,4 +190,50 @@ void check_dangling_symlinks()
         }
     }
     closedir(dir);
+}
+
+void notify_monitor(const char *district, const char *user){
+    char log_path[256];
+    snprintf(log_path, sizeof(log_path), "%s/logged_district", district);
+
+    int f = open(".monitor_pid", O_RDONLY);
+    if (f == -1){
+        int log = open(log_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
+        if(log != -1 ){
+            const char *msg = "MONITOR NOTIFICATION: monitor couldn't be informed (no .monitor_pid file).\n";
+            write(log, msg, strlen(msg));
+            close(log);
+        }
+        return;
+    }
+    char pid_str[32];
+    memset(pid_str, 0, sizeof(pid_str));
+    read(f, pid_str, sizeof(pid_str) -1);
+    close(f);
+
+    pid_t monitor_pid = (pid_t)atoi(pid_str);
+    if(monitor_pid <= 0){
+        int log = open(log_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
+        if(log != -1){
+            const char *msg = "MONITOR NOTIFICATION: monitor couldn't be informed (invalid pid).\n";
+            write(log, msg, strlen(msg));
+            close(log);
+        }
+        return;
+    }
+    if(kill(monitor_pid, SIGUSR1) == -1){
+        int log = open(log_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
+        if(log != -1){
+            const char *msg = "MONITOR NOTIFICATION: monitor couldn't be informed (kill failed).\n";
+            write(log, msg, strlen(msg));
+            close(log);
+        }
+        return;
+    }
+    int log = open(log_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    if(log != -1){
+        const char *msg= "MONITOR NOTIFICATION: monitor successfully notified via SIGUSR1.\n";
+        write(log, msg, strlen(msg));
+        close(log);
+    }
 }

@@ -11,5 +11,6 @@ int check_permission(const char* filePath, const char* role, int needRead, int n
 void create_district_cfg(const char *district);
 void create_symlink(const char *district);
 void check_dangling_symlinks();
+void notify_monitor(const char *district, const char *user);
 
 #endif

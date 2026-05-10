@@ -118,6 +118,7 @@ void cmd_add(const char *district, const char *user, const char *role)
     if (bytesWritten == sizeof(Report))
     {
         printf("Report (ID: %d) added successfully in %s.\n", nextID, filePath);
+        notify_monitor(district, user);
     }
     else
     {

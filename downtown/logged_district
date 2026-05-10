@@ -7,3 +7,7 @@ inspector add
 1777269618
 alice
 manager list
+1778431408
+alice
+manager add
+MONITOR NOTIFICATION: monitor successfully notified via SIGUSR1.

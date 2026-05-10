@@ -3,7 +3,7 @@
 
 #define PID_FILE ".monitor_pid"
 
-void write_pid_file(void);
-void setup_signals(void);
+void write_pid_file();
+void setup_signals();
 
 #endif
