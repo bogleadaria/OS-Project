@@ -179,7 +179,7 @@ static void cmd_calculate_scores(int district_count, char **districts)
         pids[i] = pid;
     }
 
-    printf("\n=== Workload Report ===\n");
+    printf("\nWorkload Report\n");
     fflush(stdout);
 
     char buf[1024];
@@ -187,7 +187,7 @@ static void cmd_calculate_scores(int district_count, char **districts)
     {
         if (pids[i] == -1) continue;
 
-        printf("--- District: %s ---\n", districts[i]);
+        printf("District: %s\n", districts[i]);
         fflush(stdout);
 
         ssize_t n;
@@ -201,7 +201,7 @@ static void cmd_calculate_scores(int district_count, char **districts)
         waitpid(pids[i], NULL, 0);
     }
 
-    printf("=== End of Workload Report ===\n");
+    printf("End of Workload Report\n");
     fflush(stdout);
 
     free(pipes);

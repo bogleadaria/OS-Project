@@ -1,11 +1,7 @@
 AI used: Claude 
 
-
 prompt:
-
 i have this structure
-
-
 ```c
 #define NAME_LEN 32
 #define CATEGORY_LEN 16
@@ -21,28 +17,19 @@ typedef struct {
     time_t timestamp;
     char description[DESCRIPTION_LEN];
 } Report;
-
 ```
-
-
 and i have to write a filter command.
-
 filter <district_id> <condition> Filter and display reports matching a condition.
 See the section below.
 Example command lines: city_manager --role inspector --user bob --filter downtown severity:>=:2 category:==:road
-
 The filter command accepts one (or optionally more) condition(s). If more conditions are supported, they are given as distinct arguments separated by spaces. The command prints all reports that satisfy all of them (conditions are implicitly joined by AND). A condition is a single string of the form: field:operator:value
 Supported fields: severity, category, inspector, timestamp. Supported operators: ==, !=, <, <=, >, >=
-
 int parse_condition(const char *input, char *field, char *op, char *value); which splits a field:operator:value string into its three parts.
-
 int match_condition(Report *r, const char *field, const char *op, const char *value);
 which returns 1 if the record satisfies the condition and 0 otherwise.
 
 
-
 what it generated:
-
 Here's the implementation for `parse_condition`, `match_condition`, and `cmd_filter`:
 
 **In `commands.c`**, replace the empty `cmd_filter` and add the two helper functions:
