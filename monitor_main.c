@@ -14,33 +14,41 @@ int main(int argc, char *argv[])
     {
         pipe_fd = atoi(argv[1]);
         if (pipe_fd <= 0)
+        {
             pipe_fd = -1;
+        }
     }
 
     if (check_existing_monitor(pipe_fd))
     {
         if (pipe_fd != -1)
+        {
             close(pipe_fd);
+        }
         return 1;
     }
 
     write_pid_file();
 
+    char msg[64];
+    snprintf(msg, sizeof(msg), "Started, PID = %d", (int)getpid());
+    char buf[128];
+    int len = snprintf(buf, sizeof(buf), "%s%s\n", MSG_INFO, msg);
+    if (pipe_fd != -1)
     {
-        char msg[64];
-        snprintf(msg, sizeof(msg), "Started, PID = %d", (int)getpid());
-        char buf[128];
-        int len = snprintf(buf, sizeof(buf), "%s%s\n", MSG_INFO, msg);
-        if (pipe_fd != -1)
-            write(pipe_fd, buf, len);
-        else
-            write(1, buf, len);
+        write(pipe_fd, buf, len);
+    }
+    else
+    {
+        write(1, buf, len);
     }
 
     setup_signals(pipe_fd);
 
     while (1)
+    {
         pause();
+    }
 
     return 0;
 }

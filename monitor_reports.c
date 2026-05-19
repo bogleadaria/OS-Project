@@ -15,12 +15,18 @@ static void pipe_write(const char *prefix, const char *msg)
 {
     char buf[512];
     int len = snprintf(buf, sizeof(buf), "%s%s\n", prefix, msg);
-    if (len <= 0) return;
-
+    if (len <= 0)
+    {
+        return;
+    }
     if (g_pipe_fd != -1)
+    {
         write(g_pipe_fd, buf, len);
+    }
     else
+    {
         write(STDOUT_FILENO, buf, len);
+    }
 }
 
 static void handle_sigusr1(int sig)
@@ -35,7 +41,9 @@ static void handle_sigint(int sig)
     unlink(PID_FILE);
     pipe_write(MSG_EXIT, "SIGINT received. Shutting down.");
     if (g_pipe_fd != -1)
+    {
         close(g_pipe_fd);
+    }
     _exit(0);
 }
 
@@ -43,33 +51,44 @@ int check_existing_monitor(int pipe_fd)
 {
     int f = open(PID_FILE, O_RDONLY);
     if (f == -1)
+    {
         return 0;
+    }
 
     char pid_str[32];
     memset(pid_str, 0, sizeof(pid_str));
     ssize_t n = read(f, pid_str, sizeof(pid_str) - 1);
     close(f);
     if (n <= 0)
+    {
         return 0;
+    }
 
     pid_t existing_pid = (pid_t)atoi(pid_str);
     if (existing_pid <= 0)
+    {
         return 0;
+    }
 
     if (kill(existing_pid, 0) == -1)
+    {
         return 0;
+    }
 
     char msg[128];
-    snprintf(msg, sizeof(msg),
-             "Monitor already running with PID %d.", (int)existing_pid);
+    snprintf(msg, sizeof(msg), "Monitor already running with PID %d.", (int)existing_pid);
 
     char buf[256];
     int len = snprintf(buf, sizeof(buf), "%s%s\n", MSG_ERROR, msg);
+    
     if (pipe_fd != -1)
+    {
         write(pipe_fd, buf, len);
+    }
     else
+    {
         write(STDOUT_FILENO, buf, len);
-
+    }
     return 1;
 }
 
@@ -81,6 +100,7 @@ void write_pid_file(void)
         perror("Failed to create .monitor_pid");
         _exit(1);
     }
+    
     char pid_str[32];
     int len = snprintf(pid_str, sizeof(pid_str), "%d\n", (int)getpid());
     write(f, pid_str, len);
