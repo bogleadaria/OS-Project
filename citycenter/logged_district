@@ -1,3 +1,15 @@
 1778430684
 alice
 inspector add
+1779216214
+ana
+inspector add
+MONITOR NOTIFICATION: monitor couldn't be informed (kill failed).
+1779216399
+ana
+inspector add
+MONITOR NOTIFICATION: monitor couldn't be informed (no .monitor_pid file).
+1779216469
+ana
+inspector add
+MONITOR NOTIFICATION: monitor couldn't be informed (no .monitor_pid file).

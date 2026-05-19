@@ -17,13 +17,13 @@ int main(int argc, char *argv[])
     }
 
     const char *district = argv[1];
-    const path[256];
+    char path[256];
     snprintf(path, sizeof(path), "%s/reports.dat", district);
 
     int f = open(path, O_RDONLY);
     if (f == -1)
     {
-        fprintf(stderr, "scorer: cannot open %s\n");
+        fprintf(stderr, "scorer: cannot open %s\n", path);
         return 1;
     }
 

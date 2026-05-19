@@ -10,12 +10,13 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+#include "city_hub.h"
 #include "report.h"
 
 #define MONITOR_BIN "./monitor"
 #define SCORER_BIN "./scorer"
 
-static void hub_mon_loop(int read_fd)
+void hub_mon_loop(int read_fd)
 {
     char buf[512];
     char line[512];
@@ -66,7 +67,7 @@ static void hub_mon_loop(int read_fd)
     }
 }
 
-static void cmd_start_monitor(void)
+void cmd_start_monitor(void)
 {
     int pipefd[2];
     if (pipe(pipefd) == -1)
@@ -86,8 +87,6 @@ static void cmd_start_monitor(void)
 
     if (hub_mon_pid == 0)
     {
-        close(pipefd[1]);
-
         pid_t mon_pid = fork();
         if (mon_pid == -1)
         {
@@ -122,7 +121,7 @@ static void cmd_start_monitor(void)
     fflush(stdout);
 }
 
-static void cmd_calculate_scores(int district_count, char **districts)
+void cmd_calculate_scores(int district_count, char **districts)
 {
     if (district_count == 0)
     {
