@@ -1,6 +1,6 @@
 AI used: Claude 
 
-prompt:
+1. prompt:
 i have this structure
 ```c
 #define NAME_LEN 32
@@ -33,7 +33,6 @@ what it generated:
 Here's the implementation for `parse_condition`, `match_condition`, and `cmd_filter`:
 
 **In `commands.c`**, replace the empty `cmd_filter` and add the two helper functions:
-
 ```c
 int parse_condition(const char *input, char *field, char *op, char *value)
 {
@@ -171,18 +170,13 @@ void cmd_filter(const char *district, int cond_count, char **conditions)
         printf("No reports match the given conditions in %s.\n", district);
 }
 ```
-
 **In `commands.h`**, add the two new function declarations:
-
 ```c
 int parse_condition(const char *input, char *field, char *op, char *value);
 int match_condition(Report *r, const char *field, const char *op, const char *value);
 ```
-
 Since `match_condition` uses `Report *`, you'll also need to add `#include "report.h"` to `commands.h`.
-
 **In `main.c`**, add `--filter` parsing alongside the other commands. After the `--update_threshold` block:
-
 ```c
 else if (strcmp(argv[i], "--filter") == 0 && i + 1 < argc)
 {
@@ -192,9 +186,7 @@ else if (strcmp(argv[i], "--filter") == 0 && i + 1 < argc)
     // remaining argv[i+1..] are conditions, handled after the loop
 }
 ```
-
 Then in the dispatch section:
-
 ```c
 else if (strcmp(command, "filter") == 0)
 {
@@ -208,12 +200,22 @@ else if (strcmp(command, "filter") == 0)
     cmd_filter(district, cond_count, argv + cond_start);
 }
 ```
-
 ---
-
 A few design notes worth knowing:
 
 - **`parse_condition`** splits on the *first* and *last* colon, which correctly handles operators like `==` and `>=` that contain no colons themselves.
 - **`apply_op`** centralises the operator logic so both numeric and string comparisons reuse it via a normalized `cmp` value (`-1/0/1`).
 - **`timestamp`** comparisons accept a Unix epoch integer as the value (e.g. `timestamp:>=:1700000000`), consistent with how `r.timestamp` is stored.
 - VLAs (`char fields[cond_count][...]`) require C99 or later — if your compiler uses C89, swap them for fixed-size arrays or heap allocation.
+
+2. Eu lucrez pe Windows si am eroare pentru sigaction, ce pot sa fac? Am incercat sa modific mai multe in cod si nu merge
+
+response:
+Pentru că pe Windows (cu MinGW sau similar) headerele nu expun implicit simbolurile POSIX. _POSIX_C_SOURCE 200809L forțează expunerea lor. Folosește:
+```c
+#define _POSIX_C_SOURCE 200809L
+```
+Dar dacă compilezi pe Windows și nu pe Linux, această soluție s-ar putea să nu fie suficientă — sigaction, fork, pipe, execl etc. nu există pe Windows deloc, nici cu define-ul. Proiectul tău e specific Linux (folosești masiv syscall-uri POSIX). Trebuie să compilezi și să rulezi pe Linux, fie prin:
+WSL (Windows Subsystem for Linux) — cel mai simplu
+o mașină virtuală cu Ubuntu/Debian
+SSH pe un server Linux (dacă facultatea pune la dispoziție)

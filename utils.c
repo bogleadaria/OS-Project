@@ -21,37 +21,38 @@ void district_exists(const char *district)
 
 void log_action(const char *district, const char *user, const char *role, const char *action)
 {
-    if (strcmp(role, "inspector") == 0)
-    {
-        char filePath[256];
-        snprintf(filePath, sizeof(filePath), "%s/logged_district", district);
-        struct stat st;
-
-        if (stat(filePath, &st) == 0)
-        {
-            if (!(st.st_mode & S_IWGRP))
-            {
-                printf("Permission denied: Inspector cannot write to logged_district.\n");
-                return;
-            }
-        }
-    }
-
     char filePath[256];
     snprintf(filePath, sizeof(filePath), "%s/logged_district", district);
 
-    int f = open(filePath, O_WRONLY | O_CREAT | O_APPEND, 0644);
-    if (f != -1)
+    struct stat st;
+    if (stat(filePath, &st) == 0)
     {
-        chmod(filePath, 0644);
-
-        time_t now = time(NULL);
-        char entry[512];
-        int len = snprintf(entry, sizeof(entry), "%ld\n%s\n%s %s\n", now, user, role, action);
-        write(f, entry, len);
-
-        close(f);
+        mode_t expected = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+        mode_t actual = st.st_mode & 0777;
+        if (actual != expected)
+        {
+            char perm_str[10];
+            mode_to_string(st.st_mode, perm_str);
+            printf("Security error: logged_district has unexpected permissions %s (expected rw-r--r--).\nRefusing to write.\n", perm_str);
+            return;
+        }
     }
+
+    int f = open(filePath, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    if (f == -1)
+    {
+        perror("Failed to open logged_district");
+        return;
+    }
+
+    chmod(filePath, 0644);
+
+    time_t now = time(NULL);
+    char entry[512];
+    int len = snprintf(entry, sizeof(entry), "%ld\n%s\n%s %s\n", now, user, role, action);
+    write(f, entry, len);
+
+    close(f);
 }
 
 void mode_to_string(mode_t mode, char *str)
@@ -185,21 +186,25 @@ void check_dangling_symlinks()
 
         target[len] = '\0';
 
-        if(stat(target, &st) == -1){
+        if (stat(target, &st) == -1)
+        {
             printf("Warning: dangling symlink detected: %s - %s (target does not exist).\n", link_name, target);
         }
     }
     closedir(dir);
 }
 
-void notify_monitor(const char *district, const char *user){
+void notify_monitor(const char *district, const char *user)
+{
     char log_path[256];
     snprintf(log_path, sizeof(log_path), "%s/logged_district", district);
 
     int f = open(".monitor_pid", O_RDONLY);
-    if (f == -1){
+    if (f == -1)
+    {
         int log = open(log_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
-        if(log != -1 ){
+        if (log != -1)
+        {
             const char *msg = "MONITOR NOTIFICATION: monitor couldn't be informed (no .monitor_pid file).\n";
             write(log, msg, strlen(msg));
             close(log);
@@ -208,22 +213,26 @@ void notify_monitor(const char *district, const char *user){
     }
     char pid_str[32];
     memset(pid_str, 0, sizeof(pid_str));
-    read(f, pid_str, sizeof(pid_str) -1);
+    read(f, pid_str, sizeof(pid_str) - 1);
     close(f);
 
     pid_t monitor_pid = (pid_t)atoi(pid_str);
-    if(monitor_pid <= 0){
+    if (monitor_pid <= 0)
+    {
         int log = open(log_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
-        if(log != -1){
+        if (log != -1)
+        {
             const char *msg = "MONITOR NOTIFICATION: monitor couldn't be informed (invalid pid).\n";
             write(log, msg, strlen(msg));
             close(log);
         }
         return;
     }
-    if(kill(monitor_pid, SIGUSR1) == -1){
+    if (kill(monitor_pid, SIGUSR1) == -1)
+    {
         int log = open(log_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
-        if(log != -1){
+        if (log != -1)
+        {
             const char *msg = "MONITOR NOTIFICATION: monitor couldn't be informed (kill failed).\n";
             write(log, msg, strlen(msg));
             close(log);
@@ -231,8 +240,9 @@ void notify_monitor(const char *district, const char *user){
         return;
     }
     int log = open(log_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
-    if(log != -1){
-        const char *msg= "MONITOR NOTIFICATION: monitor successfully notified via SIGUSR1.\n";
+    if (log != -1)
+    {
+        const char *msg = "MONITOR NOTIFICATION: monitor successfully notified via SIGUSR1.\n";
         write(log, msg, strlen(msg));
         close(log);
     }

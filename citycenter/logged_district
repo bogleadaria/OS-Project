@@ -13,3 +13,7 @@ MONITOR NOTIFICATION: monitor couldn't be informed (no .monitor_pid file).
 ana
 inspector add
 MONITOR NOTIFICATION: monitor couldn't be informed (no .monitor_pid file).
+1779217051
+ana
+inspector add
+MONITOR NOTIFICATION: monitor successfully notified via SIGUSR1.

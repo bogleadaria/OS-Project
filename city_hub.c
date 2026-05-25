@@ -21,14 +21,18 @@ void hub_mon_loop(int read_fd)
     char buf[512];
     char line[512];
     int pos = 0;
+    int monitor_ended = 0;
 
     while (1)
     {
         ssize_t n = read(read_fd, buf, sizeof(buf));
         if (n <= 0)
         {
-            printf("[hub_mon] Monitor pipe closed. Monitor has ended.\n");
-            fflush(stdout);
+            if (!monitor_ended)
+            {
+                printf("[hub_mon] Monitor pipe closed unexpectedly. Monitor has ended.\n");
+                fflush(stdout);
+            }
             break;
         }
 
@@ -51,6 +55,7 @@ void hub_mon_loop(int read_fd)
                 {
                     printf("[monitor] %s\n", line + 5);
                     printf("[hub_mon] Monitor has ended.\n");
+                    monitor_ended = 1;
                 }
                 else
                 {
@@ -64,6 +69,9 @@ void hub_mon_loop(int read_fd)
                     line[pos++] = buf[i];
             }
         }
+
+        if (monitor_ended)
+            break;
     }
 }
 
